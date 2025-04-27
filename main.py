@@ -8,11 +8,12 @@ import time
 import json 
 from flask import Flask, jsonify
 import gradio as gr
+import sys
 
-# Configuraci��n del bot
-API_ID = ''
-API_HASH = ''
-BOT_TOKEN = ''
+# Configuración del bot
+API_ID = '24288670'
+API_HASH = '81c58005802498656d6b689dae1edacc'
+BOT_TOKEN = '8196156344:AAHbzBkHYj6XVVN5zAGPPm1PoKUYBM-PoCM'
 
 # Lista de administradores supremos (IDs de usuario)
 SUPER_ADMINS = [5702506445]  # Reemplaza con los IDs de los administradores supremos
@@ -39,36 +40,36 @@ DEFAULT_QUALITY = {
 # Calidad actual (cambiar a un diccionario que almacene la calidad por usuario)
 current_calidad = {}
 
-# L��mite de tamaￄ1�70ￄ1�79o de video (en bytes)
+# Límite de tamaño de video (en bytes)
 max_video_size = 5 * 1024 * 1024 * 1024  # 1GB por defecto
 
-# Configuraci��n de logging
+# Configuración de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
-# Inicializaci��n del bot
+# Inicialización del bot
 app = Client("ffmpeg_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, workdir="/app/session")
 
-# Funci��n para verificar si el usuario es un administrador supremo
+# Función para verificar si el usuario es un administrador supremo
 def is_super_admin(user_id):
     return user_id in SUPER_ADMINS
 
-# Funci��n para verificar si el usuario es un administrador
+# Función para verificar si el usuario es un administrador
 def is_admin(user_id):
     return user_id in ADMINS or user_id in SUPER_ADMINS
 
-# Funci��n para verificar si el usuario es autorizado
+# Función para verificar si el usuario es autorizado
 def is_authorized(user_id):
     return user_id in AUTHORIZED_USERS or user_id in ADMINS or user_id in SUPER_ADMINS
 
-# Funci��n para verificar si el grupo es autorizado
+# Función para verificar si el grupo es autorizado
 def is_authorized_group(chat_id):
     if chat_id in AUTHORIZED_GROUPS:
         return True
-    logger.info(f"ￄ1�77ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72 {chat_id} ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�77ￄ1�74.")
+    logger.info(f"❌𝐆𝐫𝐮𝐩𝐨 {chat_id} 𝐧𝐨 𝐚𝐮𝐭𝐨𝐫𝐢𝐳𝐚𝐝𝐨❌.")
     return False
 
-# Funci��n para guardar los datos en un archivo JSON
+# Función para guardar los datos en un archivo JSON
 def save_data():
     data = {
         'authorized_users': AUTHORIZED_USERS,
@@ -78,7 +79,7 @@ def save_data():
     with open('data.json', 'w') as f:
         json.dump(data, f)
 
-# Funci��n para cargar los datos desde un archivo JSON
+# Función para cargar los datos desde un archivo JSON
 def load_data():
     global AUTHORIZED_USERS, AUTHORIZED_GROUPS, ADMINS
     try:
@@ -93,14 +94,14 @@ def load_data():
 # Cargar datos al iniciar el bot
 load_data()
 
-# Funci��n para formatear el tiempo en HH:MM:SS
+# Función para formatear el tiempo en HH:MM:SS
 def format_time(seconds):
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     seconds = int(seconds % 60)
     return f"{hours:02}:{minutes:02}:{seconds:02}"
 
-# Funci��n para comprimir el video
+# Función para comprimir el video
 async def compress_video(input_file, output_file, user_id):
     # Obtener la calidad del usuario o usar la calidad predeterminada
     quality = current_calidad.get(user_id, DEFAULT_QUALITY)
@@ -121,9 +122,9 @@ async def compress_video(input_file, output_file, user_id):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    stdout, stderr = await process.communicate()  # Por si tiene error en la compresi��n
+    stdout, stderr = await process.communicate()  # Por si tiene error en la compresión
     if process.returncode != 0:
-        logger.error(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: {stderr.decode()}ￄ1�76ￄ1�70ￄ1�71ￄ1�75")
+        logger.error(f"‼️𝐄𝐫𝐫𝐨𝐫 𝐞𝐧 𝐞𝐥 𝐩𝐫𝐨𝐜𝐞𝐬𝐨: {stderr.decode()}‼️")
     return process.returncode
     
 # Comando de bienvenida
@@ -131,13 +132,13 @@ async def compress_video(input_file, output_file, user_id):
 async def start(client: Client, message: Message):
     if is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         await message.reply_text(
-            "ￄ1�79ￄ1�70 Bienvenido a Compresor Video use /help para mas ayuda ￄ1�79ￄ1�72"
+            "😄 Bienvenido a Compresor Video use /help para mas ayuda 📚"
         )
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -146,15 +147,15 @@ async def start(client: Client, message: Message):
 async def help(client: Client, message: Message):
     if is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         help_text = """
-        **ￄ1�70ￄ1�76ￄ1�73ￄ1�74ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�70ￄ1�76:**
+        **🤖𝐂𝐨𝐦𝐚𝐧𝐝𝐨𝐬 𝐃𝐢𝐬𝐩𝐨𝐧𝐢𝐛𝐥𝐞𝐬🤖:**
 
-        **ￄ1�79ￄ1�74ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�79ￄ1�74:**
+        **👤𝐋𝐨𝐬 𝐝𝐞 𝐔𝐬𝐮𝐚𝐫𝐢𝐨👤:**
         - **/start**: Muestra un mensaje de bienvenida.
         - **/help**: Muestra esta lista de comandos.
-        - **/calidad**: Cambia la calidad de compresi��n del video. Uso: `/calidad resolution=740x480 crf=32 audio_bitrate=60k fps=28 preset=ultrafast codec=libx265`
+        - **/calidad**: Cambia la calidad de compresión del video. Uso: `/calidad resolution=740x480 crf=32 audio_bitrate=60k fps=28 preset=ultrafast codec=libx265`
         - **/id**: Obtiene el ID de un usuario. Uso: `/id @username` (Solo Administradores)
 
-        **ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�77ￄ1�76ￄ1�71ￄ1�75ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�77ￄ1�76ￄ1�71ￄ1�75:**
+        **👨‍✈️𝐋𝐨𝐬 𝐝𝐞 𝐚𝐝𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐝𝐨𝐫👨‍✈️:**
         - **/add**: Agrega un usuario autorizado. Uso: `/add user_id`
         - **/ban**: Quita un usuario autorizado. Uso: `/ban user_id`
         - **/listusers**: Lista los usuarios autorizados.
@@ -165,9 +166,9 @@ async def help(client: Client, message: Message):
         - **/ban_admins**: Quita un administrador. Uso: `/ban_admins user_id` (Solo Administradores Supremos)
         - **/listadmins**: Lista los administradores.
         - **/info**: Envia un mensaje a todos los usuarios y grupos autorizados. Uso: `/info [mensaje]`
-        - **/max**: Establece el l��mite de tamaￄ1�70ￄ1�79o para los videos. Uso: `/max [tamaￄ1�70ￄ1�79o en MB o GB]`
+        - **/max**: Establece el límite de tamaño para los videos. Uso: `/max [tamaño en MB o GB]`
 
-        **ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�78ￄ1�73ￄ1�71 ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�78ￄ1�79ￄ1�76:**
+        **𝐂𝐚𝐥𝐢𝐝𝐚𝐝 𝐩𝐫𝐞𝐝𝐞𝐭𝐞𝐫𝐦𝐢𝐧𝐚𝐝𝐚📔:**
         - resolution: 740x480
         - crf: 32
         - audio_bitrate: 60k
@@ -175,15 +176,15 @@ async def help(client: Client, message: Message):
         - preset: ultrafast
         - codec: libx265
 
-        **ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�79ￄ1�73ￄ1�72ￄ1�73ￄ1�77ￄ1�79ￄ1�78:**
-        - Env��a un video y el bot lo comprimir�� con la calidad actual.
+        **𝐔𝐬𝐨 𝐝𝐞𝐥 𝐛𝐨𝐭📖:**
+        - Envía un video y el bot lo comprimirá con la calidad actual.
         """
         await message.reply_text(help_text)
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -193,14 +194,14 @@ async def list_admins(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         if ADMINS:
             admin_list = "\n".join(map(str, ADMINS))
-            await message.reply_text(f"ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�76 ￄ1�79ￄ1�75:\n{admin_list}")
+            await message.reply_text(f"𝐋𝐢𝐬𝐭 𝐀𝐝𝐦𝐢𝐧𝐬 📓:\n{admin_list}")
         else:
-            await message.reply_text("ￄ1�78ￄ1�77ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�78ￄ1�77.")
+            await message.reply_text("⭕𝐍𝐨 𝐡𝐚𝐲 𝐚𝐝𝐦𝐢𝐧⭕.")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -211,7 +212,7 @@ async def set_calidad(client: Client, message: Message):
         global current_calidad
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /calidad resolution=740x480 crf=32 audio_bitrate=60k fps=28 preset=ultrafast codec=libx265")
+            await message.reply_text("𝐔𝐬𝐨: /calidad resolution=740x480 crf=32 audio_bitrate=60k fps=28 preset=ultrafast codec=libx265")
             return
 
         user_quality = current_calidad.get(message.from_user.id, DEFAULT_QUALITY.copy())
@@ -221,19 +222,19 @@ async def set_calidad(client: Client, message: Message):
                 if key in user_quality:
                     user_quality[key] = value
                 else:
-                    await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�70ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�77ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72: {key}ￄ1�78ￄ1�77")
+                    await message.reply_text(f"⭕𝐏𝐚𝐫𝐚́𝐦𝐞𝐭𝐫𝐨 𝐝𝐞𝐬𝐜𝐨𝐧𝐨𝐜𝐢𝐝𝐨: {key}⭕")
                     return
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�70ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�77ￄ1�73ￄ1�75ￄ1�73ￄ1�72: {arg}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐄𝐫𝐫𝐨𝐫 𝐫𝐞𝐩𝐢𝐭𝐚𝐧𝐝𝐨 𝐩𝐚𝐫𝐚́𝐦𝐞𝐭𝐫𝐨: {arg}⭕")
                 return
 
         current_calidad[message.from_user.id] = user_quality
-        await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�78ￄ1�73ￄ1�71 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�79: {current_calidad[message.from_user.id]}ￄ1�76ￄ1�70ￄ1�71ￄ1�75")
+        await message.reply_text(f"‼️𝐂𝐚𝐥𝐢𝐝𝐚𝐝 𝐚𝐜𝐭𝐮𝐚𝐥: {current_calidad[message.from_user.id]}‼️")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -243,7 +244,7 @@ async def add_user(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /add user_id")
+            await message.reply_text("𝐔𝐬𝐨: /add user_id")
             return
 
         for user_id in args:
@@ -252,16 +253,16 @@ async def add_user(client: Client, message: Message):
                 if user_id not in AUTHORIZED_USERS:
                     AUTHORIZED_USERS.append(user_id)
                     save_data()
-                    await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�78ￄ1�73ￄ1�74ￄ1�73ￄ1�74 ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�77ￄ1�73.")
+                    await message.reply_text(f"✅𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐚𝐠𝐠 𝐚 𝐥𝐚 𝐥𝐢𝐬𝐭𝐮𝐬𝐞𝐫✅.")
                 else:
-                    await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�72ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�76ￄ1�70ￄ1�71ￄ1�75.")
+                    await message.reply_text(f"‼️𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐲𝐚 𝐞𝐬𝐭𝐚 𝐞𝐧 𝐥𝐚 𝐥𝐢𝐬𝐭𝐮𝐬𝐞𝐫‼️.")
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�78: {user_id}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐈𝐃 𝐞𝐫𝐫𝐨𝐧𝐞𝐚: {user_id}⭕")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -271,7 +272,7 @@ async def ban_user(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /ban user_id")
+            await message.reply_text("𝐔𝐬𝐨: /ban user_id")
             return
 
         for user_id in args:
@@ -280,16 +281,16 @@ async def ban_user(client: Client, message: Message):
                 if user_id in AUTHORIZED_USERS:
                     AUTHORIZED_USERS.remove(user_id)
                     save_data()
-                    await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�77ￄ1�73.")
+                    await message.reply_text(f"✅𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐫𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐝𝐞 𝐥𝐚 𝐥𝐢𝐬𝐭𝐮𝐬𝐞𝐫✅.")
                 else:
-                    await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�76ￄ1�70ￄ1�71ￄ1�75.")
+                    await message.reply_text(f"‼️𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐧𝐨 𝐞𝐬𝐭𝐚 𝐞𝐧 𝐥𝐚 𝐥𝐢𝐬𝐭𝐮𝐬𝐞𝐫‼️.")
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�78: {user_id}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐈𝐃 𝐞𝐫𝐫𝐨𝐧𝐞𝐚: {user_id}⭕")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -299,14 +300,14 @@ async def list_users(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         if AUTHORIZED_USERS:
             user_list = "\n".join(map(str, AUTHORIZED_USERS))
-            await message.reply_text(f"ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�70:\n{user_list}")
+            await message.reply_text(f"𝐋𝐢𝐬𝐭 𝐔𝐬𝐞𝐫 📘:\n{user_list}")
         else:
-            await message.reply_text("ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�77ￄ1�74.")
+            await message.reply_text("❌𝐍𝐨 𝐡𝐚𝐲 𝐮𝐬𝐮𝐚𝐫𝐢𝐨𝐬 𝐚𝐮𝐭𝐨𝐫𝐢𝐳𝐚𝐝𝐨𝐬❌.")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -316,7 +317,7 @@ async def add_group(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /grup group_id")
+            await message.reply_text("𝐔𝐬𝐨: /grup group_id")
             return
 
         for group_id in args:
@@ -325,16 +326,16 @@ async def add_group(client: Client, message: Message):
                 if group_id not in AUTHORIZED_GROUPS:
                     AUTHORIZED_GROUPS.append(group_id)
                     save_data()
-                    await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72 {group_id} ￄ1�73ￄ1�78ￄ1�73ￄ1�74ￄ1�73ￄ1�74 ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�77ￄ1�73")
+                    await message.reply_text(f"✅𝐆𝐫𝐮𝐩𝐨 {group_id} 𝐚𝐠𝐠 𝐚 𝐥𝐚 𝐥𝐢𝐬𝐭 𝐠𝐫𝐮𝐩✅")
                 else:
-                    await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72 {group_id} ￄ1�73ￄ1�72ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�76ￄ1�70ￄ1�71ￄ1�75.")
+                    await message.reply_text(f"‼️𝐆𝐫𝐮𝐩𝐨 {group_id} 𝐲𝐚 𝐞𝐬𝐭𝐚 𝐞𝐧 𝐥𝐚 𝐥𝐢𝐬𝐭 𝐠𝐫𝐮𝐩‼️.")
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�78: {group_id}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐈𝐃 𝐞𝐫𝐫𝐨𝐧𝐞𝐚: {group_id}⭕")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -344,7 +345,7 @@ async def ban_group(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /bangrup group_id")
+            await message.reply_text("𝐔𝐬𝐨: /bangrup group_id")
             return
 
         for group_id in args:
@@ -353,16 +354,16 @@ async def ban_group(client: Client, message: Message):
                 if group_id in AUTHORIZED_GROUPS:
                     AUTHORIZED_GROUPS.remove(group_id)
                     save_data()
-                    await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72 {group_id} ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�77ￄ1�73.")
+                    await message.reply_text(f"✅𝐆𝐫𝐮𝐩𝐨 {group_id} 𝐫𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐝𝐞 𝐥𝐚 𝐥𝐢𝐬𝐭 𝐠𝐫𝐮𝐩✅.")
                 else:
-                    await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72 {group_id} ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�76ￄ1�70ￄ1�71ￄ1�75.")
+                    await message.reply_text(f"‼️𝐆𝐫𝐮𝐩𝐨 {group_id} 𝐧𝐨 𝐞𝐬𝐭𝐚 𝐞𝐧 𝐥𝐚 𝐥𝐢𝐬𝐭 𝐠𝐫𝐮𝐩‼️.")
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�78: {group_id}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐈𝐃 𝐞𝐫𝐫𝐨𝐧𝐞𝐚: {group_id}⭕")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -372,14 +373,14 @@ async def list_groups(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         if AUTHORIZED_GROUPS:
             group_list = "\n".join(map(str, AUTHORIZED_GROUPS))
-            await message.reply_text(f"ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73 ￄ1�79ￄ1�79:\n{group_list}")
+            await message.reply_text(f"𝐋𝐢𝐬𝐭 𝐠𝐫𝐮𝐩 📗:\n{group_list}")
         else:
-            await message.reply_text("ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�72 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�77ￄ1�74.")
+            await message.reply_text("❌𝐍𝐨 𝐡𝐚𝐲 𝐠𝐫𝐮𝐩𝐨𝐬 𝐚𝐮𝐭𝐨𝐫𝐢𝐳𝐚𝐝𝐨𝐬❌.")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -389,7 +390,7 @@ async def add_admin(client: Client, message: Message):
     if is_super_admin(message.from_user.id):
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /add_admins user_id")
+            await message.reply_text("𝐔𝐬𝐞: /add_admins user_id")
             return
 
         for user_id in args:
@@ -398,16 +399,16 @@ async def add_admin(client: Client, message: Message):
                 if user_id not in ADMINS and user_id not in SUPER_ADMINS:
                     ADMINS.append(user_id)
                     save_data()
-                    await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�78ￄ1�73ￄ1�74ￄ1�73ￄ1�74 ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�77ￄ1�73.")
+                    await message.reply_text(f"✅𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐚𝐠𝐠 𝐚 𝐥𝐚 𝐥𝐢𝐬𝐭 𝐚𝐝𝐦𝐢𝐧𝐬✅.")
                 else:
-                    await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�72ￄ1�73ￄ1�78 ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�76ￄ1�70ￄ1�71ￄ1�75.")
+                    await message.reply_text(f"‼️𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐲𝐚 𝐞𝐬 𝐚𝐝𝐦𝐢𝐧‼️.")
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�78: {user_id}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐈𝐃 𝐞𝐫𝐫𝐨𝐧𝐞𝐚: {user_id}⭕")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -417,7 +418,7 @@ async def ban_admin(client: Client, message: Message):
     if is_super_admin(message.from_user.id):
         args = message.text.split()[1:]
         if not args:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /ban_admins user_id")
+            await message.reply_text("𝐔𝐬𝐞: /ban_admins user_id")
             return
 
         for user_id in args:
@@ -426,16 +427,16 @@ async def ban_admin(client: Client, message: Message):
                 if user_id in ADMINS and user_id not in SUPER_ADMINS:
                     ADMINS.remove(user_id)
                     save_data()
-                    await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�79ￄ1�73ￄ1�78 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�77ￄ1�73.")
+                    await message.reply_text(f"✅𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐫𝐞𝐦𝐨𝐯𝐢𝐝𝐨 𝐝𝐞 𝐥𝐚 𝐥𝐢𝐬𝐭 𝐚𝐝𝐦𝐢𝐧𝐬✅.")
                 else:
-                    await message.reply_text(f"ￄ1�76ￄ1�70ￄ1�71ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id} ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�76 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�76ￄ1�70ￄ1�71ￄ1�75.")
+                    await message.reply_text(f"‼️𝐔𝐬𝐮𝐚𝐫𝐢𝐨 {user_id} 𝐧𝐨 𝐞𝐬 𝐚𝐝𝐦𝐢𝐧‼️.")
             except ValueError:
-                await message.reply_text(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�78: {user_id}ￄ1�78ￄ1�77")
+                await message.reply_text(f"⭕𝐈𝐃 𝐞𝐫𝐫𝐨𝐧𝐞𝐚: {user_id}⭕")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -444,16 +445,16 @@ async def ban_admin(client: Client, message: Message):
 async def get_id(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
         if len(message.command) == 1:
-            await message.reply_text(f"ￄ1�73ￄ1�71ￄ1�73ￄ1�78 ￄ1�73ￄ1�70ￄ1�73ￄ1�75: {message.from_user.id}")
+            await message.reply_text(f"𝐓𝐮 𝐈𝐃: {message.from_user.id}")
         else:
             username = message.command[1]
             user = await client.get_users(username)
-            await message.reply_text(f"ￄ1�73ￄ1�70ￄ1�73ￄ1�75 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 @{user.username}: {user.id}")
+            await message.reply_text(f"𝐈𝐃 𝐝𝐞 @{user.username}: {user.id}")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -463,7 +464,7 @@ async def send_info(client: Client, message: Message):
     if is_admin(message.from_user.id):
         args = message.text.split(None, 1)
         if len(args) == 1:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /info [mensaje]")
+            await message.reply_text("𝐔𝐬𝐞: /info [mensaje]")
             return
 
         info_message = args[1]
@@ -473,31 +474,31 @@ async def send_info(client: Client, message: Message):
             try:
                 await client.send_message(user_id, info_message)
             except Exception as e:
-                logger.error(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�78 ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�72 {user_id}: {e}ￄ1�78ￄ1�77")
+                logger.error(f"⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐞𝐧𝐯𝐢𝐚𝐫 𝐦𝐞𝐧𝐬𝐚𝐣𝐞 𝐚 𝐮𝐬𝐮𝐚𝐫𝐢𝐨 {user_id}: {e}⭕")
 
         # Enviar mensaje a todos los grupos autorizados
         for group_id in AUTHORIZED_GROUPS:
             try:
                 await client.send_message(group_id, info_message)
             except Exception as e:
-                logger.error(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�78 ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�72 {group_id}: {e}ￄ1�78ￄ1�77")
+                logger.error(f"⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐞𝐧𝐯𝐢𝐚𝐫 𝐦𝐞𝐧𝐬𝐚𝐣𝐞 𝐚 𝐠𝐫𝐮𝐩𝐨 {group_id}: {e}⭕")
 
-        await message.reply_text("ￄ1�77ￄ1�73ￄ1�73ￄ1�74ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�74ￄ1�73ￄ1�79ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�77ￄ1�73.")
+        await message.reply_text("✅𝐌𝐞𝐧𝐬𝐚𝐣𝐞 𝐠𝐥𝐨𝐛𝐚𝐥 𝐞𝐧𝐯𝐢𝐚𝐝𝐨 𝐜𝐨𝐫𝐫𝐞𝐜𝐭𝐚𝐦𝐞𝐧𝐭𝐞✅.")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
-# Comando para cambiar el l��mite de tamaￄ1�70ￄ1�79o de video
+# Comando para cambiar el límite de tamaño de video
 @app.on_message(filters.command("max") & filters.private)
 async def set_max_size(client: Client, message: Message):
     if is_admin(message.from_user.id):
         args = message.text.split(None, 1)
         if len(args) == 1:
-            await message.reply_text("ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72: /max [tamaￄ1�70ￄ1�79o en MB o GB]")
+            await message.reply_text("𝐔𝐬𝐞: /max [tamaño en MB o GB]")
             return
 
         size = args[1].upper()
@@ -506,25 +507,25 @@ async def set_max_size(client: Client, message: Message):
                 size_gb = int(size[:-2])
                 max_video_size = size_gb * 1024 * 1024 * 1024
             except ValueError:
-                await message.reply_text("ￄ1�77ￄ1�74ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�78 ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�78 ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�72ￄ1�73ￄ1�76 'GB'ￄ1�77ￄ1�74")
+                await message.reply_text("❌𝐄𝐫𝐫𝐨𝐫 𝐮𝐬𝐞 𝐮𝐧𝐚 𝐜𝐢𝐟𝐫𝐚 𝐲 𝐝𝐞𝐬𝐩𝐮𝐞𝐬 'GB'❌")
                 return
         elif size.endswith("MB"):
             try:
                 size_mb = int(size[:-2])
                 max_video_size = size_mb * 1024 * 1024
             except ValueError:
-                await message.reply_text("ￄ1�77ￄ1�74ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�78 ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�78 ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�72ￄ1�73ￄ1�76 'MB'ￄ1�77ￄ1�74")
+                await message.reply_text("❌𝐄𝐫𝐫𝐨𝐫 𝐮𝐬𝐞 𝐮𝐧𝐚 𝐜𝐢𝐟𝐫𝐚 𝐲 𝐝𝐞𝐬𝐩𝐮𝐞𝐬 'MB'❌")
                 return
         else:
-            await message.reply_text("ￄ1�77ￄ1�74ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�78 ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�78 ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�72ￄ1�73ￄ1�76 'MB' ￄ1�73ￄ1�72 'GB'ￄ1�77ￄ1�74")
+            await message.reply_text("❌𝐄𝐫𝐫𝐨𝐫 𝐮𝐬𝐞 𝐮𝐧𝐚 𝐜𝐢𝐟𝐫𝐚 𝐲 𝐝𝐞𝐬𝐩𝐮𝐞𝐬 'MB' 𝐨 'GB'❌")
             return
 
-        await message.reply_text(f"ￄ1�77ￄ1�73ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�78 {size}ￄ1�77ￄ1�73.")
+        await message.reply_text(f"✅𝐋𝐢𝐦𝐢𝐭𝐞 𝐜𝐚𝐦𝐛𝐢𝐚𝐝𝐨 𝐚 {size}✅.")
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
 
@@ -532,14 +533,14 @@ async def set_max_size(client: Client, message: Message):
 @app.on_message(filters.video & (filters.private | filters.group))
 async def handle_video(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
-        await message.reply_text("ￄ1�79ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�70ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72ￄ1�79ￄ1�73")
+        await message.reply_text("📤𝐃𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐧𝐝𝐨 𝐕𝐢𝐝𝐞𝐨📥")
 
         # Extraer el nombre del archivo original
         file_name = message.video.file_name
         if not file_name:
             file_name = f"{message.video.file_id}.mkv"  # Usar el file_id como nombre por defecto si no hay nombre
         else:
-             # Cambiar la extensi��n del archivo a .mkv
+             # Cambiar la extensión del archivo a .mkv
              base_name, _ = os.path.splitext(file_name)
              file_name = f"{base_name}.mkv"
 
@@ -549,16 +550,16 @@ async def handle_video(client: Client, message: Message):
         try:
             await message.download(file_name=input_file)
         except Exception as e:
-            logger.error(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�70ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72: {e}ￄ1�78ￄ1�77")
-            await message.reply_text("ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�70ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72ￄ1�78ￄ1�77.")
+            logger.error(f"⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨: {e}⭕")
+            await message.reply_text("⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨⭕.")
             return
 
-        # Obtener el tamaￄ1�70ￄ1�79o del video original
+        # Obtener el tamaño del video original
         original_size = os.path.getsize(input_file)
 
-        # Verificar si el video excede el l��mite de tamaￄ1�70ￄ1�79o
+        # Verificar si el video excede el límite de tamaño
         if original_size > max_video_size:
-            await message.reply_text(f"ￄ1�77ￄ1�74ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 {max_video_size / (1024 * 1024 * 1024):.2f}ￄ1�73ￄ1�74ￄ1�73ￄ1�73ￄ1�77ￄ1�74")
+            await message.reply_text(f"⛔𝐄𝐬𝐭𝐞 𝐯𝐢𝐝𝐞𝐨 𝐞𝐱𝐞𝐝𝐞 𝐞𝐥 𝐥𝐢𝐦𝐢𝐭𝐞 𝐝𝐞 {max_video_size / (1024 * 1024 * 1024):.2f}𝐌𝐁⛔")
             os.remove(input_file)
             return
 
@@ -566,14 +567,14 @@ async def handle_video(client: Client, message: Message):
         output_file = f"compressed/{file_name}"
         os.makedirs("compressed", exist_ok=True)
         start_time = time.time()
-        await message.reply_text("ￄ1�73ￄ1�74ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72ￄ1�79ￄ1�73")
+        await message.reply_text("𝐂𝐨𝐧𝐯𝐢𝐫𝐭𝐢𝐞𝐧𝐝𝐨 𝐕𝐢𝐝𝐞𝐨📹")
         returncode = await compress_video(input_file, output_file, message.from_user.id)
         end_time = time.time()
 
         if returncode != 0:
-            await message.reply_text("ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�79ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�78ￄ1�77.")
+            await message.reply_text("⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐜𝐨𝐧𝐯𝐞𝐫𝐭𝐢𝐫⭕.")
         else:
-            # Obtener el tamaￄ1�70ￄ1�79o del video procesado
+            # Obtener el tamaño del video procesado
             processed_size = os.path.getsize(output_file)
             processing_time = end_time - start_time
             video_duration = message.video.duration
@@ -582,45 +583,45 @@ async def handle_video(client: Client, message: Message):
             processing_time_formatted = format_time(processing_time)
             video_duration_formatted = format_time(video_duration)
 
-            # Crear la descripci��n
+            # Crear la descripción
             description = f"""
-            ￄ1�77ￄ1�70ￄ1�72ￄ1�72 ￄ1�73ￄ1�79ￄ1�73ￄ1�77ￄ1�73ￄ1�74ￄ1�73ￄ1�72ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�74 ￄ1�73ￄ1�79ￄ1�73ￄ1�74ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�78ￄ1�73ￄ1�73ￄ1�73ￄ1�70ￄ1�73ￄ1�73ￄ1�73ￄ1�74 ￄ1�73ￄ1�72ￄ1�73ￄ1�74ￄ1�73ￄ1�77ￄ1�73ￄ1�77ￄ1�73ￄ1�74ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�74ￄ1�73ￄ1�73ￄ1�73ￄ1�79ￄ1�73ￄ1�74 ￄ1�72ￄ1�73ￄ1�77ￄ1�71\n
-��ￄ1�70ￄ1�73�� ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72 ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�74ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�78ￄ1�73ￄ1�79: {original_size / (1024 * 1024):.2f} MB
-��ￄ1�70ￄ1�78�� ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72: {processed_size / (1024 * 1024):.2f} MB
-ￄ1�77ￄ1�75 ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�73ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�77ￄ1�73ￄ1�72: {processing_time_formatted}
-ￄ1�71ￄ1�73 ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�73ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72: {video_duration_formatted}
-ￄ1�77ￄ1�78 ￄ1�70ￄ1�73ￄ1�73ￄ1�78ￄ1�73ￄ1�78ￄ1�73ￄ1�72 ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�71ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�75ￄ1�73ￄ1�78ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�76!ￄ1�77ￄ1�71
+            ꧁༺ 𝙋𝙧𝙤𝙘𝙚𝙨𝙤 𝙩𝙚𝙧𝙢𝙞𝙣𝙖𝙙𝙤 𝙘𝙤𝙧𝙧𝙚𝙘𝙩𝙖𝙢𝙚𝙣𝙩𝙚 ༻꧂\n
+×͡× 𝐏𝐞𝐬𝐨 𝐨𝐫𝐢𝐠𝐢𝐧𝐚𝐥: {original_size / (1024 * 1024):.2f} MB
+×͜× 𝐏𝐞𝐬𝐨 𝐩𝐫𝐨𝐜𝐞𝐬𝐚𝐝𝐨: {processed_size / (1024 * 1024):.2f} MB
+✯ 𝐓𝐢𝐞𝐦𝐩𝐨 𝐝𝐞 𝐩𝐫𝐨𝐜𝐞𝐬𝐚𝐦𝐢𝐞𝐧𝐭𝐨: {processing_time_formatted}
+𖤍 𝐓𝐢𝐞𝐦𝐩𝐨 𝐝𝐞𝐥 𝐯𝐢𝐝𝐞𝐨: {video_duration_formatted}
+♠ ¡𝐐𝐮𝐞 𝐥𝐨 𝐝𝐢𝐬𝐟𝐫𝐮𝐭𝐞𝐬!♣
             """
             # Subir el video comprimido
             try:
                 await client.send_video(message.chat.id, output_file, caption=description)
             except Exception as e:
-                logger.error(f"ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72: {e}ￄ1�78ￄ1�77")
-                await message.reply_text("ￄ1�78ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�73ￄ1�78ￄ1�73ￄ1�79 ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�75 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72ￄ1�78ￄ1�77.")
+                logger.error(f"⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐬𝐮𝐛𝐢𝐫 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨: {e}⭕")
+                await message.reply_text("⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐬𝐮𝐛𝐢𝐫 𝐞𝐥 𝐕𝐢𝐝𝐞𝐨⭕.")
             finally:
                 os.remove(input_file)
                 os.remove(output_file)
     else:
         await message.reply_text(
-            "ￄ1�77ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�72 ￄ1�73ￄ1�78ￄ1�73ￄ1�70ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�77ￄ1�74\n\nￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72 ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�71 ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75.",
+            "⛔𝐍𝐨 𝐩𝐨𝐬𝐞𝐞 𝐚𝐜𝐜𝐞𝐬𝐨⛔\n\n𝐇𝐚𝐛𝐥𝐞 𝐜𝐨𝐧 𝐞𝐥 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75 ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71", url="https://t.me/Sasuke286")]
+                [InlineKeyboardButton("𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐚𝐝𝐨𝐫 👨‍💻", url="https://t.me/Sasuke286")]
             ])
         )
         
-# Comando para mostrar informaci��n del bot
+# Comando para mostrar información del bot
 @app.on_message(filters.command("about") & (filters.private | filters.group))
 async def about(client: Client, message: Message):
-    bot_version = "ￄ1�73ￄ1�73.3"
+    bot_version = "𝐕.3"
     bot_creator = "@Sasuke286"
     bot_creation_date = "14/11/24"
 
-    about_text = f"ￄ1�70ￄ1�76 **ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�70ￄ1�73ￄ1�78 ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�79 ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�77:**\n\n" \
-                 f" - ￄ1�79ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�71: {bot_version}\n" \
-                 f" - ￄ1�79ￄ1�78ￄ1�76ￄ1�79ￄ1�79ￄ1�71ￄ1�73ￄ1�74ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�75: {bot_creator}\n" \
-                 f" - ￄ1�79ￄ1�71ￄ1�73ￄ1�77ￄ1�73ￄ1�72ￄ1�73ￄ1�70ￄ1�73ￄ1�75ￄ1�73ￄ1�78 ￄ1�73ￄ1�71ￄ1�73ￄ1�72 ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�76ￄ1�73ￄ1�78ￄ1�73ￄ1�75ￄ1�73ￄ1�75ￄ1�73ￄ1�72ￄ1�73ￄ1�79ￄ1�73ￄ1�79ￄ1�73ￄ1�72: {bot_creation_date}\n" \
-                 f" - ￄ1�79ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�78ￄ1�73ￄ1�71ￄ1�73ￄ1�70ￄ1�73ￄ1�76ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�76: ￄ1�73ￄ1�74ￄ1�73ￄ1�72ￄ1�73ￄ1�71ￄ1�73ￄ1�79ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�77ￄ1�73ￄ1�76ￄ1�73ￄ1�75 ￄ1�73ￄ1�79ￄ1�73ￄ1�76ￄ1�73ￄ1�71ￄ1�73ￄ1�72ￄ1�73ￄ1�72ￄ1�73ￄ1�76.\n\n" \
-                 f"ￄ1�70ￄ1�73ￄ1�73ￄ1�76ￄ1�73ￄ1�76ￄ1�73ￄ1�73ￄ1�73ￄ1�72ￄ1�73ￄ1�75ￄ1�73ￄ1�72 ￄ1�73ￄ1�77ￄ1�73ￄ1�72 ￄ1�73ￄ1�74ￄ1�73ￄ1�78ￄ1�73ￄ1�76ￄ1�73ￄ1�77ￄ1�73ￄ1�72! ￄ1�70ￄ1�77"
+    about_text = f"🤖 **𝐀𝐜𝐞𝐫𝐜𝐚 𝐝𝐞𝐥 𝐁𝐨𝐭:**\n\n" \
+                 f" - 📔𝐕𝐞𝐫𝐬𝐢𝐨𝐧: {bot_version}\n" \
+                 f" - 👨‍💻𝐂𝐫𝐞𝐚𝐝𝐨𝐫: {bot_creator}\n" \
+                 f" - 📅𝐅𝐞𝐜𝐡𝐚 𝐝𝐞 𝐃𝐞𝐬𝐚𝐫𝐫𝐨𝐥𝐥𝐨: {bot_creation_date}\n" \
+                 f" - 🔆𝐅𝐮𝐧𝐜𝐢𝐨𝐧𝐞𝐬: 𝐂𝐨𝐧𝐯𝐞𝐫𝐭𝐢𝐫 𝐯𝐢𝐝𝐞𝐨𝐬.\n\n" \
+                 f"¡𝐄𝐬𝐩𝐞𝐫𝐨 𝐭𝐞 𝐠𝐮𝐬𝐭𝐞! 🤗"
 
     await message.reply_text(about_text)
 
@@ -631,12 +632,24 @@ flask_app = Flask(__name__)
 def health_check():
     return jsonify({"status": "ok"})
 
-# Funci��n para iniciar Gradio
+# Función para iniciar Gradio
 def start_gradio():
-    gr.Interface(fn=lambda: "Bot de compresi��n de videos en ejecuci��n", inputs=[], outputs="text").launch(server_name="0.0.0.0", server_port=7860)
+    gr.Interface(fn=lambda: "Bot de compresión de videos en ejecución", inputs=[], outputs="text").launch(server_name="0.0.0.0", server_port=7860)
+
+# Función para reiniciar el bot
+def restart_bot():
+    time.sleep(47 * 60 * 60)  # Esperar 47 horas
+    print("Reiniciando el bot...")
+    # Reiniciar el script actual
+    os.execv(sys.executable, ['python'] + sys.argv)
 
 if __name__ == "__main__":
-    import threading
+    # Iniciar el hilo para reiniciar el bot
+    restart_thread = threading.Thread(target=restart_bot)
+    restart_thread.daemon = True
+    restart_thread.start()
+
+    # Iniciar Gradio en un hilo separado
     gradio_thread = threading.Thread(target=start_gradio)
     gradio_thread.daemon = True
     gradio_thread.start()
