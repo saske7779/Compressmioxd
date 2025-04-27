@@ -1,0 +1,5 @@
+pyrogram
+tgcrypto 
+ffmpeg-python
+gradio
+flask
