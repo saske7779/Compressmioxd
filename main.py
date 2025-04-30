@@ -14,7 +14,7 @@ import re
 # Configuración del bot
 API_ID = '21282861'
 API_HASH = '5570ce56a170e27183b728b887f88aa0'
-BOT_TOKEN = '8196156344:AAHbzBkHYj6XVVN5zAGPPm1PoKUYBM-PoCM'
+BOT_TOKEN = '7650150161:AAFkSAWZFM6utrAqGUkkeVjn6L5H9OX9bdg'
 
 # Lista de administradores supremos (IDs de usuario)
 SUPER_ADMINS = [5702506445]
