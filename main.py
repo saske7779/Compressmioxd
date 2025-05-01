@@ -49,7 +49,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger()
 
 # Inicialización del bot
-app = Client("ffmpeg_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, workdir="/app/session")
+import os
+   os.makedirs("/app/session", exist_ok=True)  # Añade esto ANTES de inicializar el Client
+
+   app = Client(
+       "ffmpeg_bot",
+       api_id=API_ID,
+       api_hash=API_HASH,
+       bot_token=BOT_TOKEN,
+       workdir="/app/session",  # Usa una ruta absoluta
+       plugins={"root": "pyrogram/plugins"}  # Opcional: para plugins
+   )
 
 # Función para verificar si el usuario es un administrador supremo
 def is_super_admin(user_id):
