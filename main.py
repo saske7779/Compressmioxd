@@ -14,7 +14,7 @@ import threading
 # Configuración del bot
 API_ID = '24288670'
 API_HASH = '81c58005802498656d6b689dae1edacc'
-BOT_TOKEN = '7689833778:AAGFPpf_OKqwsZylP_FKtaonytp77-aVsn0'
+BOT_TOKEN = '7863846293:AAEAZbdcyNKTmKBwO240qnZtCZQvY_-Bc3E'
 
 # Lista de administradores supremos (IDs de usuario)
 SUPER_ADMINS = [5702506445]  # Reemplaza con los IDs de los administradores supremos
