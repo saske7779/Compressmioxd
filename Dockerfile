@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y ffmpeg
 COPY . /app
 
 # Instalar las dependencias
-RUN pip install --no-cache-dir pyrogram ffmpeg-python tgcrypto pydub gradio flask
+RUN pip install --no-cache-dir pyrogram ffmpeg-python tgcrypto pydub gradio flask psutil
 
 # Crear el directorio de sesiones
 RUN mkdir -p /app/session
