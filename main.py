@@ -135,7 +135,8 @@ async def progress_callback(current, total, msg, proceso, start_time):
         key = (msg.chat.id, msg.id)
         last_time = last_progress_update.get(key)
 
-        if last_time and (now - last_time).total_seconds() < 5:
+        # Actualizar cada 5 segundos o si es la primera actualización
+        if last_time and (now - last_time).total_seconds() < 5 and current != 0:
             return
 
         last_progress_update[key] = now
@@ -153,7 +154,7 @@ async def progress_callback(current, total, msg, proceso, start_time):
                 f"┠ Tiempo restante: {int(eta)}s\n╰━━━━━━━━━━━━━━━━━━╯\n"
             )
         except Exception as e: # Catch all exceptions for message editing
-            logger.error(f"Error al editar mensaje de progreso: {e}", exc_info=True)
+            logger.error(f"Error al editar mensaje de progreso (descarga/subida): {e}", exc_info=True)
     except Exception as e:
         logger.error(f"Error en progress_callback: {e}", exc_info=True)
 
@@ -212,6 +213,12 @@ async def compress_video_ffmpeg(input_file, output_file, user_id, msg_progress):
     last_update_time = time.time()
     time_pattern = re.compile(r"time=(\d+:\d+:\d+\.\d+)")
 
+    # Enviar el mensaje inicial de progreso de compresión
+    try:
+        await msg_progress.edit(f"{progress_message_template}**Progreso**: {create_compression_bar(0)}")
+    except Exception as e:
+        logger.error(f"Error al enviar el mensaje inicial de progreso de compresión: {e}", exc_info=True)
+
     while True:
         line = await process.stderr.readline()
         if not line and process.returncode is not None:
@@ -225,6 +232,8 @@ async def compress_video_ffmpeg(input_file, output_file, user_id, msg_progress):
             current_time = h * 3600 + m * 60 + s
             percent = min(100, (current_time / duration) * 100)
 
+            # Actualizar el mensaje de progreso solo si el porcentaje ha cambiado significativamente
+            # o si ha pasado suficiente tiempo desde la última actualización.
             if percent - last_percent >= 5 or (time.time() - last_update_time) >= 5:
                 bar = create_compression_bar(percent)
                 try:
