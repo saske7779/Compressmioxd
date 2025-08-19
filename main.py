@@ -194,8 +194,16 @@ async def compress_video_ffmpeg(input_file, output_file, user_id, msg_progress):
     duration = 0
     try:
         probe_command = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', input_file]
-        probe_output = await asyncio.create_subprocess_output(*probe_command)
-        duration = float(probe_output.strip())
+        probe_process = await asyncio.create_subprocess_exec(
+            *probe_command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        probe_stdout, probe_stderr = await probe_process.communicate()
+        if probe_process.returncode == 0:
+            duration = float(probe_stdout.strip())
+        else:
+            logger.warning(f"ffprobe error: {probe_stderr.decode().strip()}")
     except Exception as e:
         logger.warning(f"Could not get video duration: {e}")
 
@@ -704,7 +712,7 @@ async def handle_video(client: Client, message: Message):
         output_file = f"compressed/{file_name}"
         os.makedirs("compressed", exist_ok=True)
         start_time = time.time()
-        
+
         compression_msg = await download_msg.edit("𝐂𝐨𝐧𝐯𝐢𝐫𝐭𝐢𝐞𝐧𝐝𝐨 𝐕𝐢𝐝𝐞𝐨📹")
         returncode = await compress_video_ffmpeg(input_file, output_file, message.from_user.id, compression_msg)
         end_time = time.time()
