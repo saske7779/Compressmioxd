@@ -182,13 +182,14 @@ async def compress_video_ffmpeg(input_file, output_file, user_id, msg_progress):
         '-preset', quality['preset'],
         '-b:a', quality['audio_bitrate'],
         '-threads', '0',  # Usar todos los hilos disponibles
+        '-tune', 'zerolatency', # Añadido para posible mejora de velocidad
+        '-movflags', '+faststart', # Añadido para optimización de reproducción
         '-y', output_file
     ]
 
     process = await asyncio.create_subprocess_exec(
         *command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE # Solo capturar stderr para el progreso
     )
 
     # Get video duration for progress calculation
@@ -202,21 +203,16 @@ async def compress_video_ffmpeg(input_file, output_file, user_id, msg_progress):
         )
         probe_stdout, probe_stderr = await probe_process.communicate()
         if probe_process.returncode == 0:
-            try:
-                duration = float(probe_stdout.strip())
-            except ValueError:
-                logger.warning(f"ffprobe returned non-float duration: {probe_stdout.decode().strip()}")
+            duration = float(probe_stdout.strip())
         else:
-            logger.warning(f"ffprobe error (return code {probe_process.returncode}): {probe_stderr.decode().strip()}")
-    except FileNotFoundError:
-        logger.warning("ffprobe not found. Please ensure it's installed and in your PATH.")
+            logger.warning(f"ffprobe error: {probe_stderr.decode().strip()}")
     except Exception as e:
-        logger.warning(f"Could not get video duration with ffprobe: {e}", exc_info=True)
+        logger.warning(f"Could not get video duration: {e}")
 
     progress_message_template = "╭✠╼━━━━━━━━━━━━━━━✠╮\n┠🗜️𝗖𝗼𝗺𝗽𝗿𝗶𝗺𝗶𝗲𝗻𝗱𝗼 𝗩𝗶𝗱𝗲𝗼🎬\n╰✠╼━━━━━━━━━━━━━━━✠╯\n\n"
     last_percent = -1
     last_update_time = time.time()
-    time_pattern = re.compile(r"time=(\d{2}:\d{2}:\d{2}\.\d{2})") # Ajustado para ser más específico con el formato HH:MM:SS.ms
+    time_pattern = re.compile(r"time=(\d+:\d+:\d+\.\d+)")
 
     # Enviar el mensaje inicial de progreso de compresión
     try:
@@ -224,57 +220,36 @@ async def compress_video_ffmpeg(input_file, output_file, user_id, msg_progress):
     except Exception as e:
         logger.error(f"Error al enviar el mensaje inicial de progreso de compresión: {e}", exc_info=True)
 
-    # Leer la salida de stderr línea por línea para el progreso
     while True:
         line = await process.stderr.readline()
-        if not line:
-            if process.returncode is not None: # Process has finished
-                break
-            else: # Still running but no output for a moment, wait a bit
-                await asyncio.sleep(0.1)
-                continue
-
-        line = line.decode('utf-8', errors='ignore').strip() # Añadir errors='ignore' para evitar problemas con caracteres no UTF-8
+        if not line and process.returncode is not None:
+            break
+        line = line.decode('utf-8', errors='ignore').strip() # Añadido errors='ignore' para evitar problemas de decodificación
 
         match = time_pattern.search(line)
         if match and duration > 0:
             time_str = match.group(1)
-            try:
-                h, m, s = map(float, time_str.split(':'))
-                current_time = h * 3600 + m * 60 + s
-                percent = min(100, (current_time / duration) * 100)
+            h, m, s = map(float, time_str.split(':'))
+            current_time = h * 3600 + m * 60 + s
+            percent = min(100, (current_time / duration) * 100)
 
-                # Actualizar el mensaje de progreso solo si el porcentaje ha cambiado significativamente
-                # o si ha pasado suficiente tiempo desde la última actualización.
-                if percent - last_percent >= 5 or (time.time() - last_update_time) >= 5:
-                    bar = create_compression_bar(percent)
-                    try:
-                        await msg_progress.edit(f"{progress_message_template}**Progreso**: {bar}")
-                    except Exception as e: # Catch all exceptions for message editing
-                        logger.error(f"Error al editar mensaje de progreso de compresión: {e}", exc_info=True)
-                    last_percent = percent
-                    last_update_time = time.time()
-            except ValueError:
-                logger.warning(f"Could not parse time from FFmpeg output: {time_str}")
-        # else:
-        #     logger.debug(f"FFmpeg stderr: {line}") # Descomentar para depurar la salida de FFmpeg
+            # Actualizar el mensaje de progreso solo si el porcentaje ha cambiado significativamente
+            # o si ha pasado suficiente tiempo desde la última actualización.
+            if percent - last_percent >= 5 or (time.time() - last_update_time) >= 5:
+                bar = create_compression_bar(percent)
+                try:
+                    await msg_progress.edit(f"{progress_message_template}**Progreso**: {bar}")
+                except Exception as e: # Catch all exceptions for message editing
+                    logger.error(f"Error al editar mensaje de progreso de compresión: {e}", exc_info=True)
+                last_percent = percent
+                last_update_time = time.time()
 
-    # Esperar a que el proceso termine y obtener la salida final
-    stdout, stderr = await process.communicate()
+    # Esperar a que el proceso termine y obtener el returncode
+    await process.wait()
     if process.returncode != 0:
-        logger.error(f"‼️𝐄𝐫𝐫𝐨𝐫 𝐞𝐧 𝐞𝐥 𝐩𝐫𝐨𝐜𝐞𝐬𝐨 FFmpeg (código {process.returncode}): {stderr.decode(errors='ignore')}‼️")
-        # Asegurarse de que el mensaje de progreso finalice con un error si hubo uno
-        try:
-            await msg_progress.edit(f"{progress_message_template}**Progreso**: {create_compression_bar(0)}\n\n⭕️𝐄𝐫𝐫𝐨𝐫 𝐝𝐮𝐫𝐚𝐧𝐭𝐞 𝐥𝐚 𝐜𝐨𝐦𝐩𝐫𝐞𝐬𝐢𝐨́𝐧. 𝐂𝐨́𝐝𝐢𝐠𝐨 𝐝𝐞 𝐬𝐚𝐥𝐢𝐝𝐚: {process.returncode}⭕️")
-        except Exception as e:
-            logger.error(f"Error al editar mensaje de error de compresión: {e}", exc_info=True)
-    else:
-        # Asegurarse de que el mensaje de progreso finalice en 100% si fue exitoso
-        try:
-            await msg_progress.edit(f"{progress_message_template}**Progreso**: {create_compression_bar(100)}")
-        except Exception as e:
-            logger.error(f"Error al editar mensaje de progreso final: {e}", exc_info=True)
-
+        # Si hay un error, leer el resto de stderr para el log
+        remaining_stderr = await process.stderr.read()
+        logger.error(f"‼️𝐄𝐫𝐫𝐨𝐫 𝐞𝐧 𝐞𝐥 𝐩𝐫𝐨𝐜𝐞𝐬𝐨: {remaining_stderr.decode('utf-8', errors='ignore')}‼️")
     return process.returncode
 
 # Comando de bienvenida
