@@ -11,10 +11,152 @@ import gradio as gr
 import sys
 import threading
 
+
+# =========================
+# Helpers de progreso UI
+# =========================
+def _fmt_bytes(num: int) -> str:
+    # Formato humano (B, KB, MB, GB)
+    step = 1024.0
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if num < step:
+            return f"{num:.2f} {unit}" if unit != "B" else f"{int(num)} {unit}"
+        num /= step
+    return f"{num:.2f} PB"
+
+def _progress_bar(ratio: float, width: int = 14) -> str:
+    ratio = 0.0 if ratio is None else max(0.0, min(1.0, float(ratio)))
+    filled = int(round(ratio * width))
+    return "█" * filled + "░" * (width - filled)
+
+def _fmt_time_s(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    s = seconds % 60
+    return f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
+
+async def _safe_edit(msg: Message, text: str):
+    try:
+        await msg.edit_text(text)
+    except Exception:
+        # A veces Telegram limita edits o el mensaje ya no existe; ignoramos para no romper el flujo
+        pass
+
+async def _ffprobe_duration_seconds(path: str) -> float:
+    # Devuelve duración en segundos (float) usando ffprobe
+    proc = await asyncio.create_subprocess_exec(
+        "ffprobe", "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        path,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    out, _ = await proc.communicate()
+    try:
+        return float(out.decode().strip() or 0.0)
+    except Exception:
+        return 0.0
+
+class _EditThrottler:
+    def __init__(self, min_interval: float = 1.0):
+        self.min_interval = min_interval
+        self._last = 0.0
+    def ok(self) -> bool:
+        now = time.time()
+        if now - self._last >= self.min_interval:
+            self._last = now
+            return True
+        return False
+
+
+def _download_progress_cb(current: int, total: int, progress_msg: Message, throttler: _EditThrottler, start_time: float):
+    # Callback sync para pyrogram (edita el mensaje de progreso)
+    if not throttler.ok():
+        return
+    ratio = (current / total) if total else 0.0
+    elapsed = max(0.001, time.time() - start_time)
+    speed = current / elapsed
+    eta = ((total - current) / speed) if speed > 0 and total else 0.0
+    text = (
+        "📥 **Descargando...**\n"
+        f"`{_progress_bar(ratio)}`  **{ratio*100:.1f}%**\n"
+        f"**{_fmt_bytes(current)}** / **{_fmt_bytes(total)}**\n"
+        f"⚡ **{_fmt_bytes(speed)}/s**   ⏱ **ETA {_fmt_time_s(eta)}**"
+    )
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        loop.create_task(_safe_edit(progress_msg, text))
+
+async def _compress_with_progress(input_file: str, output_file: str, quality: dict, progress_msg: Message):
+    # Ejecuta ffmpeg y reporta progreso en base a out_time_ms vs duración total
+    duration = await _ffprobe_duration_seconds(input_file)
+    duration = max(duration, 0.001)
+    throttler = _EditThrottler(min_interval=1.0)
+
+    command = [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostats",
+        "-i", input_file,
+        "-vf", f'scale={quality["resolution"]},fps={quality["fps"]}',
+        "-c:v", quality["codec"],
+        "-crf", quality["crf"],
+        "-preset", quality["preset"],
+        "-b:a", quality["audio_bitrate"],
+        "-threads", "0",
+        "-y", output_file,
+        "-progress", "pipe:1",
+        "-loglevel", "error"
+    ]
+
+    process = await asyncio.create_subprocess_exec(
+        *command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    processed_s = 0.0
+    # lee progreso por stdout
+    try:
+        while True:
+            line = await process.stdout.readline()
+            if not line:
+                break
+            line = line.decode(errors="ignore").strip()
+            if "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            if key == "out_time_ms":
+                try:
+                    processed_s = float(val) / 1_000_000.0
+                except Exception:
+                    processed_s = processed_s
+                ratio = min(1.0, max(0.0, processed_s / duration))
+                if throttler.ok():
+                    text = (
+                        "🗜️ **Comprimiendo...**\n"
+                        f"`{_progress_bar(ratio)}`  **{ratio*100:.1f}%**\n"
+                        f"⏳ **{int(processed_s)}s / {int(duration)}s**\n"
+                        f"🕒 **{_fmt_time_s(processed_s)} / {_fmt_time_s(duration)}**"
+                    )
+                    await _safe_edit(progress_msg, text)
+            elif key == "progress" and val in ("end", "done"):
+                break
+    finally:
+        _, stderr = await process.communicate()
+    if process.returncode != 0:
+        logger.error(f"‼️𝐄𝐫𝐫𝐨𝐫 𝐞𝐧 𝐞𝐥 𝐩𝐫𝐨𝐜𝐞𝐬𝐨: {stderr.decode(errors='ignore')}‼️")
+    return process.returncode, duration
+
 # Configuración del bot
 API_ID = '24288670'
 API_HASH = '81c58005802498656d6b689dae1edacc'
-BOT_TOKEN = '7689833778:AAGHpVnduUqj58hMqnJLuYT1PQwA-KgJ5-I'
+BOT_TOKEN = '7983364007:AAEUIzh6i_13eflSK7DBaApuj4-y4AzIruY'
 
 # Lista de administradores supremos (IDs de usuario)
 SUPER_ADMINS = [5702506445]  # Reemplaza con los IDs de los administradores supremos
@@ -103,10 +245,16 @@ def format_time(seconds):
     return f"{hours:02}:{minutes:02}:{seconds:02}"
 
 # Función para comprimir el video
-async def compress_video(input_file, output_file, user_id):
+async def compress_video(input_file, output_file, user_id, progress_msg: Message = None):
     # Obtener la calidad del usuario o usar la calidad predeterminada
     quality = current_calidad.get(user_id, DEFAULT_QUALITY)
-    
+
+    # Si tenemos un mensaje de progreso, usamos reporte en vivo
+    if progress_msg is not None:
+        returncode, _duration = await _compress_with_progress(input_file, output_file, quality, progress_msg)
+        return returncode
+
+    # Fallback sin progreso (por compatibilidad)
     command = [
         'ffmpeg',
         '-i', input_file,
@@ -115,7 +263,7 @@ async def compress_video(input_file, output_file, user_id):
         '-crf', quality['crf'],
         '-preset', quality['preset'],
         '-b:a', quality['audio_bitrate'],
-        '-threads', '0',  # Usar todos los hilos disponibles
+        '-threads', '0',
         '-y', output_file
     ]
     process = await asyncio.create_subprocess_exec(
@@ -123,11 +271,11 @@ async def compress_video(input_file, output_file, user_id):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    stdout, stderr = await process.communicate()  # Por si tiene error en la compresión
+    _, stderr = await process.communicate()
     if process.returncode != 0:
-        logger.error(f"‼️𝐄𝐫𝐫𝐨𝐫 𝐞𝐧 𝐞𝐥 𝐩𝐫𝐨𝐜𝐞𝐬𝐨: {stderr.decode()}‼️")
+        logger.error(f"‼️𝐄𝐫𝐫𝐨𝐫 𝐞𝐧 𝐞𝐥 𝐩𝐫𝐨𝐜𝐞𝐬𝐨: {stderr.decode(errors='ignore')}‼️")
     return process.returncode
-    
+
 # Comando de bienvenida
 @app.on_message(filters.command("start") & (filters.private | filters.group))
 async def start(client: Client, message: Message):
@@ -534,7 +682,9 @@ async def set_max_size(client: Client, message: Message):
 @app.on_message(filters.video & (filters.private | filters.group))
 async def handle_video(client: Client, message: Message):
     if is_admin(message.from_user.id) or is_authorized(message.from_user.id) or is_authorized_group(message.chat.id):
-        await message.reply_text("📤𝐃𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐧𝐝𝐨 𝐕𝐢𝐝𝐞𝐨📥")
+        progress_msg = await message.reply_text("📥 **Preparando descarga...**")
+        dl_throttler = _EditThrottler(min_interval=1.0)
+        dl_start = time.time()
 
         # Extraer el nombre del archivo original
         file_name = message.video.file_name
@@ -549,7 +699,7 @@ async def handle_video(client: Client, message: Message):
         input_file = f"downloads/{file_name}"
         os.makedirs("downloads", exist_ok=True)
         try:
-            await message.download(file_name=input_file)
+            await message.download(file_name=input_file, progress=_download_progress_cb, progress_args=(progress_msg, dl_throttler, dl_start))
         except Exception as e:
             logger.error(f"⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨: {e}⭕")
             await message.reply_text("⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐯𝐢𝐝𝐞𝐨⭕.")
@@ -568,9 +718,10 @@ async def handle_video(client: Client, message: Message):
         output_file = f"compressed/{file_name}"
         os.makedirs("compressed", exist_ok=True)
         start_time = time.time()
-        await message.reply_text("𝐂𝐨𝐧𝐯𝐢𝐫𝐭𝐢𝐞𝐧𝐝𝐨 𝐕𝐢𝐝𝐞𝐨📹")
-        returncode = await compress_video(input_file, output_file, message.from_user.id)
+        await _safe_edit(progress_msg, "🗜️ **Iniciando compresión...**")
+        returncode = await compress_video(input_file, output_file, message.from_user.id, progress_msg=progress_msg)
         end_time = time.time()
+        await _safe_edit(progress_msg, "✅ **Compresión finalizada. Subiendo...**")
 
         if returncode != 0:
             await message.reply_text("⭕𝐄𝐫𝐫𝐨𝐫 𝐚𝐥 𝐜𝐨𝐧𝐯𝐞𝐫𝐭𝐢𝐫⭕.")
