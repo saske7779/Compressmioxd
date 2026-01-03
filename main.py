@@ -1,3 +1,12 @@
+# === PROXY CONFIG ===
+proxy = {
+    "scheme": "http",
+    "hostname": "142.111.48.253",
+    "port": 7030,
+    "username": "llbaajef",
+    "password": "mzzcgmylravt"
+}
+
 import os
 import asyncio
 import logging
@@ -190,8 +199,7 @@ max_video_size = 5 * 1024 * 1024 * 1024  # 1GB por defecto
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
-# Inicialización del bot
-app = Client("ffmpeg_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, workdir="/app/session")
+app = Client(proxy=proxy, "ffmpeg_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, workdir="/app/session")
 
 # Función para verificar si el usuario es un administrador supremo
 def is_super_admin(user_id):
