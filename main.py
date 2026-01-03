@@ -1,12 +1,3 @@
-# === PROXY CONFIG ===
-proxy = {
-    "scheme": "http",
-    "hostname": "142.111.48.253",
-    "port": 7030,
-    "username": "llbaajef",
-    "password": "mzzcgmylravt"
-}
-
 import os
 import asyncio
 import logging
@@ -16,7 +7,6 @@ import subprocess
 import time
 import json 
 from flask import Flask, jsonify
-import gradio as gr
 import sys
 import threading
 
@@ -167,6 +157,23 @@ API_ID = '24288670'
 API_HASH = '81c58005802498656d6b689dae1edacc'
 BOT_TOKEN = '7983364007:AAEUIzh6i_13eflSK7DBaApuj4-y4AzIruY'
 
+# === PROXY CONFIG ===
+# Formato recomendado: http://usuario:password@ip:puerto
+PROXY_URL = os.getenv("PROXY_URL", "http://llbaajef:mzzcgmylravt@142.111.48.253:7030")
+
+# Exportamos variables estándar por compatibilidad (algunas librerías solo leen esto).
+os.environ.setdefault("http_proxy", PROXY_URL)
+os.environ.setdefault("https_proxy", PROXY_URL)
+os.environ.setdefault("all_proxy", PROXY_URL)
+
+proxy = {
+    "scheme": "http",  # "socks4", "socks5" y "http" (según docs de Pyrogram)
+    "hostname": "142.111.48.253",
+    "port": 7030,
+    "username": "llbaajef",
+    "password": "mzzcgmylravt"
+}
+
 # Lista de administradores supremos (IDs de usuario)
 SUPER_ADMINS = [5702506445]  # Reemplaza con los IDs de los administradores supremos
 
@@ -199,7 +206,8 @@ max_video_size = 5 * 1024 * 1024 * 1024  # 1GB por defecto
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
-app = Client(proxy=proxy, "ffmpeg_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, workdir="/app/session")
+# Inicialización del bot
+app = Client("ffmpeg_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN, workdir="/app/session", proxy=proxy)
 
 # Función para verificar si el usuario es un administrador supremo
 def is_super_admin(user_id):
@@ -792,6 +800,10 @@ flask_app = Flask(__name__)
 def health_check():
     return jsonify({"status": "ok"})
 
+# Iniciar Flask en hilo separado (para health check)
+def start_flask():
+    flask_app.run(host='0.0.0.0', port=8000)
+
 # Función para iniciar Gradio
 def start_gradio():
     gr.Interface(fn=lambda: "Bot de compresión de videos en ejecución", inputs=[], outputs="text").launch(server_name="0.0.0.0", server_port=7860)
@@ -809,13 +821,11 @@ if __name__ == "__main__":
     restart_thread.daemon = True
     restart_thread.start()
 
-    # Iniciar Gradio en un hilo separado
-    gradio_thread = threading.Thread(target=start_gradio)
-    gradio_thread.daemon = True
-    gradio_thread.start()
+
+    # Iniciar el servidor Flask (health check) en un hilo
+    flask_thread = threading.Thread(target=start_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
 
     # Iniciar el bot
     app.run()
-
-    # Iniciar el servidor web
-    flask_app.run(host='0.0.0.0', port=8000)

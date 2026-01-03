@@ -1,5 +1,5 @@
-pyrogram
-tgcrypto 
+pyrogram==2.0.106
+pysocks==1.7.1
+tgcrypto
 ffmpeg-python
-gradio
 flask
